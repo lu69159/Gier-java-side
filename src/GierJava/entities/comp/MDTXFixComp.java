@@ -9,7 +9,7 @@ import mindustry.entities.units.StatusEntry;
  * @implNote Use to fix crash in MindustryX...
  */
 @EntityComponent
-abstract class StatusAccessComp {
+abstract class MDTXFixComp {
     public abstract Seq<StatusEntry> statuses();
-    public abstract float healthBalance();
+    public float healthBalance(){ };
 }

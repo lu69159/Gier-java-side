@@ -30,7 +30,7 @@ import mindustry.entities.pattern.*;
 
 public class GierUnitTypes {
     // `genIO` is only used here to avoid creating a `revision` directory, which is used to track IO.
-    public static @EntityDef(value = {Unitc.class, StatusAccessc.class}, genIO = false) UnitType 
+    public static @EntityDef(value = {Unitc.class, MDTXFixc.class}, genIO = false) UnitType 
     
     // Core units
     restoration,
@@ -39,10 +39,10 @@ public class GierUnitTypes {
     spark,
     drive;
     
-    public static @EntityDef(value = {Unitc.class, StatusAccessc.class}, genIO = false) UnitType ash;
+    public static @EntityDef(value = {Unitc.class, MDTXFixc.class}, genIO = false) UnitType ash;
     
     // Internals
-    public static @EntityDef(value = {Unitc.class, BuildingTetherc.class, Payloadc.class, StatusAccessc.class}, genIO = false) UnitType carrier;
+    public static @EntityDef(value = {Unitc.class, BuildingTetherc.class, Payloadc.class, MDTXFixc.class}, genIO = false) UnitType carrier;
     
     public static void load(){
         restoration = new UnitType("restoration"){{
