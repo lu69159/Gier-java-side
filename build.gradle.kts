@@ -151,55 +151,51 @@ project(":"){
     }
 
     val fetchComps = tasks.named<FetchCompsTask>("fetchComps") {
-        // 变更兼容补丁版本时，令 fetchComps 重新执行一次。
-        inputs.property("mindustryXStatusesAccessor", "v1")
+    inputs.property("mindustryXStatusesAccessor", "v1")
 
-        // 此 doLast 在 EntityAnno 默认的组件下载 Action 之后执行。
-        doLast {
-            val statusComp = outputDirectory.get().asFile.resolve("StatusComp.java")
+    doLast {
+        val statusComp = outputDirectory.get().asFile.resolve("StatusComp.java")
 
-            if (!statusComp.isFile) {
+        if (!statusComp.isFile) {
+            throw GradleException(
+                "StatusComp.java not found: ${statusComp.absolutePath}"
+            )
+        }
+
+        val source = statusComp.readText(Charsets.UTF_8)
+        val signature = Regex(
+            """\bSeq\s*<\s*StatusEntry\s*>\s+statuses\s*\(\s*\)"""
+        )
+
+        if (!signature.containsMatchIn(source)) {
+            val classEnd = source.lastIndexOf('}')
+            if (classEnd < 0) {
                 throw GradleException(
-                    "StatusComp.java not found in EntityAnno fetch output: ${statusComp.absolutePath}"
+                    "Cannot find the closing brace in ${statusComp.absolutePath}"
                 )
             }
 
-            val source = statusComp.readText(Charsets.UTF_8)
-
-            // 避免重复插入；不要求编译所用的原版 API 声明该方法。
-            val statusesMethod = Regex(
-                """\bSeq\s*<\s*StatusEntry\s*>\s+statuses\s*\(\s*\)"""
-            )
-
-            if (!statusesMethod.containsMatchIn(source)) {
-                val classEnd = source.lastIndexOf('}')
-                if (classEnd < 0) {
-                    throw GradleException(
-                        "Cannot find the closing brace in ${statusComp.absolutePath}"
-                    )
+            val method = """
+                
+                public Seq<StatusEntry> statuses(){
+                    return statuses;
                 }
+                
+            """.trimIndent()
 
-                val method = """
-                    
-                    public Seq<StatusEntry> statuses(){
-                        return statuses;
-                    }
-                    
-                """.trimIndent()
-
-                val patched = source.substring(0, classEnd) +
+            statusComp.writeText(
+                source.substring(0, classEnd) +
                     method +
-                    source.substring(classEnd)
-
-                statusComp.writeText(patched, Charsets.UTF_8)
-                logger.lifecycle("Added statuses() compatibility accessor to StatusComp.java")
-            }
+                    source.substring(classEnd),
+                Charsets.UTF_8
+            )
         }
     }
+}
 
-    tasks.named<JavaCompile>("compileJava") {
-        dependsOn(fetchComps)
-    }
+tasks.named<JavaCompile>("compileJava") {
+    dependsOn(fetchComps)
+}
 
     dependencies{
         // Use the entity generation annotation processor.
