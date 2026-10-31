@@ -4,6 +4,9 @@ import mindustry.client.*
 import mindustry.client.service.*
 import mindustry.client.task.*
 import java.util.jar.*
+import ent.task.FetchCompsTask
+import org.gradle.api.GradleException
+import org.gradle.api.tasks.compile.JavaCompile
 
 buildscript{
     val (mindustry, mindustryVersion, mindustrySource) = when(val version = providers.gradleProperty("mindustryVersion").get()){
@@ -145,6 +148,57 @@ project(":"){
         fetchPackage = modFetch
         genSrcPackage = modGenSrc
         genPackage = modGen
+    }
+
+    val fetchComps = tasks.named<FetchCompsTask>("fetchComps") {
+        // 变更兼容补丁版本时，令 fetchComps 重新执行一次。
+        inputs.property("mindustryXStatusesAccessor", "v1")
+
+        // 此 doLast 在 EntityAnno 默认的组件下载 Action 之后执行。
+        doLast {
+            val statusComp = outputDirectory.get().asFile.resolve("StatusComp.java")
+
+            if (!statusComp.isFile) {
+                throw GradleException(
+                    "StatusComp.java not found in EntityAnno fetch output: ${statusComp.absolutePath}"
+                )
+            }
+
+            val source = statusComp.readText(Charsets.UTF_8)
+
+            // 避免重复插入；不要求编译所用的原版 API 声明该方法。
+            val statusesMethod = Regex(
+                """\bSeq\s*<\s*StatusEntry\s*>\s+statuses\s*\(\s*\)"""
+            )
+
+            if (!statusesMethod.containsMatchIn(source)) {
+                val classEnd = source.lastIndexOf('}')
+                if (classEnd < 0) {
+                    throw GradleException(
+                        "Cannot find the closing brace in ${statusComp.absolutePath}"
+                    )
+                }
+
+                val method = """
+                    
+                    public Seq<StatusEntry> statuses(){
+                        return statuses;
+                    }
+                    
+                """.trimIndent()
+
+                val patched = source.substring(0, classEnd) +
+                    method +
+                    source.substring(classEnd)
+
+                statusComp.writeText(patched, Charsets.UTF_8)
+                logger.lifecycle("Added statuses() compatibility accessor to StatusComp.java")
+            }
+        }
+    }
+
+    tasks.named<JavaCompile>("compileJava") {
+        dependsOn(fetchComps)
     }
 
     dependencies{
