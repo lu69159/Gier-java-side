@@ -177,6 +177,16 @@ project(":"){
 
                 val method = """
 
+                    @Override
+                    public void update() {
+                        healthBalanceMean.add(
+                            ((health - lastHealth) + (shield - lastShield)) / Time.delta
+                        );
+                        lastHealth = health;
+                        lastShield = shield;
+                        super.update();
+                    }
+
                     public float healthBalance() {
                         return healthBalanceMean.mean();
                     }
