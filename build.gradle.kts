@@ -176,6 +176,10 @@ project(":"){
                 }
 
                 val method = """
+
+                    public float healthBalance() {
+                        return healthBalanceMean.mean();
+                    }
                     
                     public Seq<StatusEntry> statuses(){
                         return statuses;

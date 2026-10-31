@@ -1,8 +1,12 @@
 package GierJava.entities.comp;
 
+import arc.math.WindowedMean;
+import arc.util.Time;
 import arc.struct.Seq;
-import ent.anno.Annotations.EntityComponent;
+import ent.anno.Annotations.*;
 import mindustry.entities.units.StatusEntry;
+import mindustry.gen.Posc;
+
 
 /**
  * 
@@ -10,6 +14,24 @@ import mindustry.entities.units.StatusEntry;
  */
 @EntityComponent
 abstract class MDTXFixComp {
+    @Import float health;
+    @Import float shield;
+
+    private transient float lastHealth = 0f;
+    private transient float lastShield = 0f;
+    private final transient WindowedMean healthBalanceMean = new WindowedMean(120);
+
+    @Override
+    public void update() {
+        healthBalanceMean.add(
+            ((health - lastHealth) + (shield - lastShield)) / Time.delta
+        );
+        lastHealth = health;
+        lastShield = shield;
+        super.update();
+    }
+
+
+    public abstract float healthBalance();
     public abstract Seq<StatusEntry> statuses();
-    public float healthBalance(){ };
 }
