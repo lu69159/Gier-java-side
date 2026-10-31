@@ -16,6 +16,7 @@ import mindustry.gen.Posc;
 abstract class MDTXFixComp implements Posc{
     @Import float health;
     @Import float shield;
+    @Import Seq<StatusEntry> statuses;
 
     private transient float lastHealth = 0f, lastShield = 0f;
     private final transient WindowedMean healthBalanceMean = new WindowedMean(120);
@@ -33,5 +34,7 @@ abstract class MDTXFixComp implements Posc{
         return healthBalanceMean.mean();
     }
 
-    public abstract Seq<StatusEntry> statuses();
+    public Seq<StatusEntry> statuses(){
+        return statuses;
+    }
 }
