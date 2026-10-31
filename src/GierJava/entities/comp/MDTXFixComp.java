@@ -20,6 +20,18 @@ abstract class MDTXFixComp {
     private transient float lastHealth = 0f, lastShield = 0f;
     private final transient WindowedMean healthBalanceMean = new WindowedMean(120);
 
-    public abstract float healthBalance();
+    @Override
+    public void update() {
+        healthBalanceMean.add(
+            ((health - lastHealth) + (shield - lastShield)) / Time.delta
+        );
+        lastHealth = health;
+        lastShield = shield;
+    }
+
+    public float healthBalance() {
+        return healthBalanceMean.mean();
+    }
+
     public abstract Seq<StatusEntry> statuses();
 }
