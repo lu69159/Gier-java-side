@@ -151,51 +151,51 @@ project(":"){
     }
 
     val fetchComps = tasks.named<FetchCompsTask>("fetchComps") {
-    inputs.property("mindustryXStatusesAccessor", "v1")
+        inputs.property("mindustryXStatusesAccessor", "v1")
 
-    doLast {
-        val statusComp = outputDirectory.get().asFile.resolve("StatusComp.java")
+        doLast {
+            val statusComp = outputDirectory.get().asFile.resolve("StatusComp.java")
 
-        if (!statusComp.isFile) {
-            throw GradleException(
-                "StatusComp.java not found: ${statusComp.absolutePath}"
-            )
-        }
-
-        val source = statusComp.readText(Charsets.UTF_8)
-        val signature = Regex(
-            """\bSeq\s*<\s*StatusEntry\s*>\s+statuses\s*\(\s*\)"""
-        )
-
-        if (!signature.containsMatchIn(source)) {
-            val classEnd = source.lastIndexOf('}')
-            if (classEnd < 0) {
+            if (!statusComp.isFile) {
                 throw GradleException(
-                    "Cannot find the closing brace in ${statusComp.absolutePath}"
+                    "StatusComp.java not found: ${statusComp.absolutePath}"
                 )
             }
 
-            val method = """
-                
-                public Seq<StatusEntry> statuses(){
-                    return statuses;
-                }
-                
-            """.trimIndent()
-
-            statusComp.writeText(
-                source.substring(0, classEnd) +
-                    method +
-                    source.substring(classEnd),
-                Charsets.UTF_8
+            val source = statusComp.readText(Charsets.UTF_8)
+            val signature = Regex(
+                """\bSeq\s*<\s*StatusEntry\s*>\s+statuses\s*\(\s*\)"""
             )
+
+            if (!signature.containsMatchIn(source)) {
+                val classEnd = source.lastIndexOf('}')
+                if (classEnd < 0) {
+                    throw GradleException(
+                        "Cannot find the closing brace in ${statusComp.absolutePath}"
+                    )
+                }
+
+                val method = """
+                    
+                    public Seq<StatusEntry> statuses(){
+                        return statuses;
+                    }
+                    
+                """.trimIndent()
+
+                statusComp.writeText(
+                    source.substring(0, classEnd) +
+                        method +
+                        source.substring(classEnd),
+                    Charsets.UTF_8
+                )
+            }
         }
     }
-}
 
-tasks.named<JavaCompile>("compileJava") {
-    dependsOn(fetchComps)
-}
+    tasks.named<JavaCompile>("compileJava") {
+        dependsOn(fetchComps)
+    }
 
     dependencies{
         // Use the entity generation annotation processor.
